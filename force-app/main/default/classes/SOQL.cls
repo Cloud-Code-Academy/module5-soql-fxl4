@@ -363,34 +363,27 @@ public with sharing class SOQL {
 
     public static List<Account> findContactsByLeadEmailDomains(Set<Id> leadIds) {
         // Query the Leads
-        List<Lead> leadList = [SELECT Id, Name, Email FROM Lead WHERE Id = :leadIds];
+        List<Lead> leadList = [SELECT Id, Email FROM Lead WHERE Id IN :leadIds];
 
         // Create a set of email domains from the Leads
         List<String> emailDomains = new List<String>();
-        String emailDomain;
+        Set<String> webDomains = new Set<String>();
 
         // Loop through each Lead
-        for (Lead lead : leadList) {
-        // Check if the email is not null
-            if (lead.Email != null && lead.Email != '') {
-                // Get the email from the Lead 
-                emailDomain = lead.Email.substringAfter('@');
-                // Add the email domain to the set
-                emailDomains.add(emailDomain);
-                System.debug(emailDomain);
+        for (Lead l : leadList) {
+            // Check if the email is not null
+            if (l.email != null && l.email != ''){
+                    // Get the email from the Lead 
+                    emailDomains.add(l.email);
+                    // Assign the web domain and add it to the set 
+                    webDomains.add('www.' + l.email.substringAfter('@'));
             }
         }
+                    
         // Query the Accounts
-        List<Account> matchingAccounts = [SELECT Id, Name, Website FROM Account WHERE Website LIKE :emailDomains];        
-        return matchingAccounts;
+        List<Account> accountList = [SELECT Id, Name, Website FROM Account WHERE Website IN :webDomains];
+        return accountList;
 
-        // I keep getting the failure notification:
-        // "System.AssertException: Assertion Failed: Expected: example.com, Actual: zzzexample.com"
-        // I'm not sure what the issue is here since line 371 shows me grabbing everything after the @ symbol.
-        // If the test is inserting test@zzzexample.com as the user's email, why is the test not accounting
-        // for zzzexample.com as being the domain???
-        // Is the title of the test misleading based on the instructions? were the instructions supposed to include
-        // steps for doing something with the account's related contacts???
     }
 
     /**
